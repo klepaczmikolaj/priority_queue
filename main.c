@@ -3,17 +3,20 @@
 #include <time.h>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <sys/sem.h>
 #include "priority_queue.h"
 
 void producer(PriorityQueue *queue){
     int i, randVal;
-    
-    for(i = 0; i < 3; i++){
+    sleep(1);
+    for(i = 0; i < 10; i++){
         QueueElement element;
         randVal = rand() % 10;
         element = createElement(randVal, LOW);
-        if(enqueue(queue, element))
+        if(enqueue(queue, element)){
             printf("Element with value: %d and Priority: LOW was added\n", element.value);
+            printf("Size: %d\n", queue->sharedMem->size);
+        }
         else
             continue;
         sleep(1);
@@ -22,20 +25,17 @@ void producer(PriorityQueue *queue){
 
 void consumer(PriorityQueue *queue){
     int i, randVal;
-    sleep(4);
-    printf("no. elements: %d\n", semctl(queue->semID, FULL, 12));
+    printf("no. elements: %d\n", queue->sharedMem->size);
 
-    assignMem(queue);
-    printf("head: %d\n", queue->buffer[0].value);
-    printf("tail: %d\n", queue->buffer[2].value);
-    detachMem(queue);
+    printf("head: %d\n", queue->sharedMem->buffer[0].value);
+    printf("tail: %d\n", queue->sharedMem->buffer[2].value);
 
-    for(i = 0; i < 2; i++){
+    for(i = 0; i < 10; i++){
         QueueElement element;
         if(dequeue(queue, &element))
             printf("Element recieved from queue, value: %d\n", element.value);
 
-        printf("no. elements: %d\n", semctl(queue->semID, FULL, 12));
+        printf("no. elements: %d\n", queue->sharedMem->size);
         sleep(1);
     }
 }

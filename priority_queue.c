@@ -20,7 +20,7 @@ void setSemaphore(PriorityQueue *q, Semaphores sem, int operation){
 void allocateMemory(PriorityQueue *q, key_t key){
     size_t memSize;
     // allocate memory and get its id
-    memSize = QUEUE_CAPACITY * sizeof(QueueElement);
+    memSize = sizeof(SharedMemory);
     q->shmID = shmget(key, memSize, IPC_CREAT | 0600);
     if(q->shmID == -1){
         perror("error allocating shared memory");
@@ -29,9 +29,9 @@ void allocateMemory(PriorityQueue *q, key_t key){
 }
 
 void assignMem(PriorityQueue *q){
-    // assign memory to the buffer
-    q->buffer = shmat(q->shmID, NULL, 0);
-    if(q->buffer == (QueueElement *)(-1)){
+    // assign memory to the queue
+    q->sharedMem = shmat(q->shmID, NULL, 0);
+    if(q->sharedMem == (SharedMemory *)(-1)){
         perror("error assigning memory to buffer");
         exit(1);
     }
@@ -39,7 +39,7 @@ void assignMem(PriorityQueue *q){
 
 void detachMem(PriorityQueue *q){
     //detach memory from the buffer
-    shmdt(q->buffer);
+    shmdt(q->sharedMem);
 }
 
 void initSemaphores(PriorityQueue *q, key_t key){
@@ -64,11 +64,20 @@ void semDown(PriorityQueue *q, Semaphores sem){
 
 // Public
 int isBufferFull(PriorityQueue *q){
-    return (q->tail + 1) % QUEUE_CAPACITY == q->head;
+    //return (q->sharedMem->tail + 1) % QUEUE_CAPACITY == q->sharedMem->head;
+    int size;
+    semDown(q, MUTEX);
+    size = q->sharedMem->size;
+    semUp(q, MUTEX);
+    return size == QUEUE_CAPACITY;
 }
 
 int isBufferEmpty(PriorityQueue *q){
-    return q->head == q->tail;
+    int size;
+    semDown(q, MUTEX);
+    size = q->sharedMem->size;
+    semUp(q, MUTEX);
+    return size == 0;
 }
 
 int initQueue(PriorityQueue *q, char *keyStr){
@@ -77,69 +86,63 @@ int initQueue(PriorityQueue *q, char *keyStr){
     key = ftok(keyStr, 1);
     allocateMemory(q, key);
     initSemaphores(q, key);
+    assignMem(q);
 
-    q->head = 0;
-    q->tail = 0;
+    q->sharedMem->head = 0;
+    q->sharedMem->tail = 0;
+    q->sharedMem->size = 0;
 }
 
 int deleteQueue(PriorityQueue *q){
     semctl(q->semID, 0, IPC_RMID);
     shmctl(q->shmID, IPC_RMID, NULL);
+    detachMem(q);
 }
 
 
 int enqueue(PriorityQueue *q, QueueElement element){
-    int success;
     if(q == NULL){
         perror("queue pointer is null");
         exit(1);
+    }
+
+    if(isBufferFull(q)){
+        return 0;
     }
 
     semDown(q, EMPTY);
     semDown(q, MUTEX);
     //start of critical section
-    assignMem(q);
+    q->sharedMem->buffer[q->sharedMem->tail] = element;
+    q->sharedMem->tail = (q->sharedMem->tail + 1) % QUEUE_CAPACITY;
+    q->sharedMem->size++;
 
-    if(isBufferFull(q)){
-        success = 0;
-    }
-    else{
-        q->buffer[q->tail] = element;
-        q->tail = (q->tail + 1) % QUEUE_CAPACITY;
-        success = 1;
-    }
-
-    detachMem(q);
     //end of critical section
     
     semUp(q, MUTEX);
     semUp(q, FULL);
 
-    return success;
+    return 1;
 }
 
 int dequeue(PriorityQueue *q, QueueElement *element){
-    int success;
     if(q == NULL){
         perror("queue pointer is null");
         exit(1);
     }
 
+    if(isBufferEmpty(q)){
+        return 0;
+    }
+
     semDown(q, FULL);
     semDown(q, MUTEX);
     //start of critical
-    assignMem(q);
 
-    if(isBufferEmpty(q)){
-        success = 0;
-    }
-    else{
-        *element = q->buffer[q->head];
-        q->head = (q->head + 1) % QUEUE_CAPACITY;
-        success = 1;
-    }
+    *element = q->sharedMem->buffer[q->sharedMem->head];
+    q->sharedMem->head = (q->sharedMem->head + 1) % QUEUE_CAPACITY;
+    q->sharedMem->size--;
 
-    detachMem(q);
     //end of critical
     semUp(q, MUTEX);
     semUp(q, EMPTY);

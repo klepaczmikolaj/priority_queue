@@ -6,23 +6,24 @@ int main(int argc, char const *argv[]){
     char *path = "priority_queue_str";
     initQueue(&queue, path);
 
-    printf("head: %d tail: %d\n", queue.head, queue.tail);
+    printf("head: %d tail: %d\n", queue.sharedMem->head, queue.sharedMem->tail);
 
 
-    printf("no. elements: %d\n", semctl(queue.semID, FULL, 12));
+    printf("no. elements: %d\n", queue.sharedMem->size);
     int i;
-    for(i = 0; i < 3; i++){
+   /* for(i = 0; i < 3; i++){
         QueueElement elem;
         elem = createElement(2, HIGH);
         enqueue(&queue, elem);
-        printf("no. elements: %d\n", semctl(queue.semID, FULL, 12));
+        printf("no. elements: %d\n", queue.sharedMem->size);
     }
-
+*/
 
     for(i = 0; i < 6; i++){
         QueueElement elem;
         dequeue(&queue, &elem);
-        printf("no. elements: %d\n", semctl(queue.semID, FULL, 12));
+        printf("elem val: %d\n", elem.value);
+        printf("no. elements: %d\n", queue.sharedMem->size);
     }
     
     deleteQueue(&queue);

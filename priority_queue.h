@@ -15,13 +15,18 @@ typedef struct elem{
     int value; 
 } QueueElement;
 
+typedef struct shm{
+    int head;
+    int tail;
+    int size;
+    QueueElement buffer[QUEUE_CAPACITY];
+} SharedMemory;
+
 typedef struct prQ{
     QueueType type;
     int shmID;
     int semID;
-    int head;
-    int tail;
-    QueueElement *buffer;
+    SharedMemory *sharedMem;
 } PriorityQueue;
 
 // Private

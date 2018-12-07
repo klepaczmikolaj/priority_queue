@@ -64,7 +64,6 @@ void semDown(PriorityQueue *q, Semaphores sem){
 
 // Public
 int isBufferFull(PriorityQueue *q){
-    //return (q->sharedMem->tail + 1) % QUEUE_CAPACITY == q->sharedMem->head;
     int size;
     semDown(q, MUTEX);
     size = q->sharedMem->size;

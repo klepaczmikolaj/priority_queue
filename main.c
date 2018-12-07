@@ -7,24 +7,25 @@
 #include "priority_queue.h"
 
 void producer(PriorityQueue *queue){
-    int i, randVal;
-    sleep(1);
+    int i, randVal, ranSleep;
     for(i = 0; i < 10; i++){
         QueueElement element;
         randVal = rand() % 10;
         element = createElement(randVal, LOW);
         if(enqueue(queue, element)){
             printf("Element with value: %d and Priority: LOW was added\n", element.value);
-            printf("Size: %d\n", queue->sharedMem->size);
+            printf("Size: %d\n\n", queue->sharedMem->size);
         }
         else
             continue;
-        sleep(1);
+        ranSleep = 900000 + rand() % 200000;
+        usleep(ranSleep);
+        printf("rand: %d \n", ranSleep);
     }
 }
 
 void consumer(PriorityQueue *queue){
-    int i, randVal;
+    int i, randVal, ranSleep;
     printf("no. elements: %d\n", queue->sharedMem->size);
 
     printf("head: %d\n", queue->sharedMem->buffer[0].value);
@@ -35,8 +36,10 @@ void consumer(PriorityQueue *queue){
         if(dequeue(queue, &element))
             printf("Element recieved from queue, value: %d\n", element.value);
 
-        printf("no. elements: %d\n", queue->sharedMem->size);
-        sleep(1);
+        printf("no. elements: %d\n\n", queue->sharedMem->size);
+        ranSleep = 900000 + rand() % 200000;
+        usleep(ranSleep);
+        printf("rand: %d \n", ranSleep);
     }
 }
 
@@ -55,7 +58,6 @@ int main(int argc, char const *argv[]){
     }
     else{
         consumer(&queue);
-        printf("done\n");
     }
 
     wait(NULL);

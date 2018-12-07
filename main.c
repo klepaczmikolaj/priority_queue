@@ -25,7 +25,7 @@ void producer(PriorityQueue *queue){
 }
 
 void consumer(PriorityQueue *queue){
-    int i, randVal, ranSleep;
+    int i, ranSleep;
     printf("no. elements: %d\n", queue->sharedMem->size);
 
     printf("head: %d\n", queue->sharedMem->buffer[0].value);

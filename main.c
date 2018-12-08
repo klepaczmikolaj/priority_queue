@@ -143,12 +143,14 @@ int main(int argc, char const *argv[]){
 
     if(PID1 == 0 && PID2 == 0){
         //child 1
-        producer(&queueList[LEFT_DOWN]);
+        //producer(&queueList[LEFT_DOWN]);
+        producerDouble(&queueList[LEFT_DOWN], &queueList[RIGHT_DOWN]);
         return 0;
     }
     else if(PID1 == 0 && PID2 > 0){
         //child 2
-        consumer(&queueList[LEFT_UP]);
+        //consumer(&queueList[LEFT_UP]);
+        consumerDouble(&queueList[LEFT_UP], &queueList[RIGHT_UP]);
         return 0;
     }
     else if(PID1 > 0 && PID2 == 0){
@@ -159,6 +161,7 @@ int main(int argc, char const *argv[]){
     else{
         if(fork() == 0){
             //child 4
+            producerConsumer(&queueList[RIGHT_DOWN], &queueList[RIGHT_UP]);
             return 0;
         }
         else{

@@ -44,7 +44,7 @@ void detachMem(PriorityQueue *q);
 int isBufferFull(PriorityQueue *q);
 int isBufferEmpty(PriorityQueue *q);
 
-int initQueue(PriorityQueue *q, key_t key);
+int initQueue(PriorityQueue *q, key_t key, QueueType type);
 int deleteQueue(PriorityQueue *q);
 int enqueue(PriorityQueue *q, QueueElement element);
 int dequeue(PriorityQueue *q, QueueElement *element);

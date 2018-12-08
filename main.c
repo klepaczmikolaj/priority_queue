@@ -7,9 +7,11 @@
 #include <sys/time.h>
 #include "priority_queue.h"
 
-#define SIMULATION_TIME 10
+#define SIMULATION_TIME 30
 #define QUEUE_NUMBER 4
-#define PROCESS_INTERVAL 1
+#define PROCESS_INTERVAL 2
+// probability of high priority element creation: 1/HIGH_PRI_PROBABILITY
+#define HIGH_PRI_PROBABILITY 4  
 
 typedef enum {LEFT_UP, RIGHT_UP, LEFT_DOWN, RIGHT_DOWN} queueID;
 
@@ -19,30 +21,25 @@ int randSleep(){
     return interval;
 }
 
-void producer(PriorityQueue *queue){
-    int i, randVal, ranSleep;
-    time_t timer;
-    timer = time(0);
-    while(time(0) - timer <= SIMULATION_TIME){
-        QueueElement element;
-        randVal = rand() % 10;
-        element = createElement(randVal, LOW);
-        enqueue(queue, element);
-        ranSleep = randSleep();
-        usleep(ranSleep);
-    }
+QueueElement createRandomElement(){
+    Prior priority;
+    int randVal;
+    randVal = rand() % 10;
+    if(rand() % HIGH_PRI_PROBABILITY == 0)
+        priority = HIGH;
+    else
+        priority = LOW;
+    return createElement(randVal, priority);
 }
 
 void producerDouble(PriorityQueue *queue1, PriorityQueue *queue2){
-    int i, randVal, ranSleep, choice;
+    int i, ranSleep;
     time_t timer;
     timer = time(0);
     while(time(0) - timer <= SIMULATION_TIME){
         QueueElement element;
-        randVal = rand() % 10;
-        element = createElement(randVal, LOW);
-        choice = rand() % 2;
-        if(choice == 0)
+        element = createRandomElement();
+        if(rand() % 2 == 0)
             enqueue(queue1, element);
         else
             enqueue(queue2, element);
@@ -51,31 +48,23 @@ void producerDouble(PriorityQueue *queue1, PriorityQueue *queue2){
     }
 }
 
-void consumer(PriorityQueue *queue){
-    int i, ranSleep;
-    time_t timer;
-    timer = time(0);
-    sleep(5);
-    while(time(0) - timer <= SIMULATION_TIME){
-        QueueElement element;
-        dequeue(queue, &element);
-        ranSleep = randSleep();
-        usleep(ranSleep);
-    }
-}
-
 void consumerDouble(PriorityQueue *queue1, PriorityQueue *queue2){
     int i, ranSleep;
     time_t timer;
     timer = time(0);
-    sleep(5);
     while(time(0) - timer <= SIMULATION_TIME){
         QueueElement element;
-        if(queue1->sharedMem->priorQuantity >= queue2->sharedMem->priorQuantity)
+        if(queue1->sharedMem->priorQuantity > queue2->sharedMem->priorQuantity)
             dequeue(queue1, &element);
-        else
+        else if(queue1->sharedMem->priorQuantity < queue2->sharedMem->priorQuantity)
             dequeue(queue2, &element);
-        ranSleep = randSleep() / 2;
+        else{
+            if(rand() % 2 == 0)
+                dequeue(queue1, &element);
+            else
+                dequeue(queue2, &element);
+        }
+        ranSleep = randSleep();
         usleep(ranSleep);
     }
 }
@@ -84,7 +73,7 @@ void producerConsumer(PriorityQueue *sourceQueue, PriorityQueue *destinationQueu
     int ranSleep;
     time_t timer;
     timer = time(0);
-    sleep(3);
+    sleep(10);
     while(time(0) - timer <= SIMULATION_TIME){
         QueueElement element;
         if(dequeue(sourceQueue, &element));
@@ -99,11 +88,11 @@ void displayQueues(PriorityQueue queueList[QUEUE_NUMBER]){
     printf("\n######################################\n");
     printf("\nLeft up: \n");
     displayQueue(&queueList[LEFT_UP]);
+    printf("\n\t\t\tRight up: \n\t\t\t");
+    displayQueue(&queueList[RIGHT_UP]);
     printf("\nLeft down: \n");
     displayQueue(&queueList[LEFT_DOWN]);
-    printf("\nRight up: \n");
-    displayQueue(&queueList[RIGHT_UP]);
-    printf("\nRight down: \n");
+    printf("\n\t\t\tRight down: \n\t\t\t");
     displayQueue(&queueList[RIGHT_DOWN]);
     printf("\n######################################\n");
 }
@@ -129,13 +118,19 @@ int main(int argc, char const *argv[]){
     int PID1, PID2, i;
     char *path;
     PriorityQueue queueList[QUEUE_NUMBER];
-    path = "./priority_queue.c";
 
+    path = "./priority_queue.c";
     srand(time(NULL));
+
     for(i = 0; i < QUEUE_NUMBER; i++){
         key_t key;
+        QueueType type;
         key = ftok(path, i+1);
-        initQueue(&queueList[i], key);
+        if(i == LEFT_UP || i == RIGHT_UP)
+            type = PRIORITY;
+        else
+            type = NORMAL;
+        initQueue(&queueList[i], key, type);
     }
 
     PID1 = fork();
@@ -172,7 +167,6 @@ int main(int argc, char const *argv[]){
 
     for(i = 0; i < 4; i++)
         wait(NULL);
-
 
     for(i = 0; i < QUEUE_NUMBER; i++)
         deleteQueue(&queueList[i]);

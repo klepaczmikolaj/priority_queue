@@ -79,11 +79,12 @@ int isBufferEmpty(PriorityQueue *q){
     return size == 0;
 }
 
-int initQueue(PriorityQueue *q, key_t key){
+int initQueue(PriorityQueue *q, key_t key, QueueType type){
     allocateMemory(q, key);
     initSemaphores(q, key);
     assignMem(q);
 
+    q->type = type;
     q->sharedMem->head = 0;
     q->sharedMem->tail = 0;
     q->sharedMem->size = 0;
@@ -110,8 +111,15 @@ int enqueue(PriorityQueue *q, QueueElement element){
     semDown(q, EMPTY);
     semDown(q, MUTEX);
     //start of critical section
-    q->sharedMem->buffer[q->sharedMem->tail] = element;
-    q->sharedMem->tail = (q->sharedMem->tail + 1) % QUEUE_CAPACITY;
+    if(q->type == PRIORITY && element.priority == HIGH){
+        q->sharedMem->head == 0 ? q->sharedMem->head = QUEUE_CAPACITY-1 : q->sharedMem->head--;
+        q->sharedMem->buffer[q->sharedMem->head] = element;
+    }
+    else{
+        q->sharedMem->buffer[q->sharedMem->tail] = element;
+        q->sharedMem->tail = (q->sharedMem->tail + 1) % QUEUE_CAPACITY;
+    }
+
     q->sharedMem->size++;
     if(element.priority == HIGH)
         q->sharedMem->priorQuantity++;
@@ -137,7 +145,6 @@ int dequeue(PriorityQueue *q, QueueElement *element){
     semDown(q, FULL);
     semDown(q, MUTEX);
     //start of critical
-
     *element = q->sharedMem->buffer[q->sharedMem->head];
     q->sharedMem->head = (q->sharedMem->head + 1) % QUEUE_CAPACITY;
     q->sharedMem->size--;

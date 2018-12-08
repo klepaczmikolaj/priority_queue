@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include "priority_queue.h"
 
 
@@ -7,17 +8,19 @@ int main(int argc, char const *argv[]){
     char *path = "priority_queue_str";
     key_t key;
     key = ftok(path, 1);
-    initQueue(&queue, key);
+    initQueue(&queue, key, PRIORITY);
 
-    printf("head: %d tail: %d\n", queue.sharedMem->head, queue.sharedMem->tail);
-
-
-    printf("no. elements: %d\n", queue.sharedMem->size);
     int i;
     for(i = 0; i < 12; i++){
         QueueElement elem;
-        elem = createElement(i, HIGH);
+        Prior priority;
+        if(rand() % 2 == 0)
+            priority = HIGH;
+        else
+            priority = LOW;
+        elem = createElement(i, priority);
         enqueue(&queue, elem);
+
         displayQueue(&queue);
         printf("head: %d, tail: %d\n\n", queue.sharedMem->head, queue.sharedMem->tail);
         printf("prior: %d\n\n", queue.sharedMem->priorQuantity);

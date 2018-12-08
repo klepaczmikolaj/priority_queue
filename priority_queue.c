@@ -50,7 +50,7 @@ void initSemaphores(PriorityQueue *q, key_t key){
     }
     semctl(q->semID, MUTEX, SETVAL, 1);
     semctl(q->semID, FULL, SETVAL, 0);
-    semctl(q->semID, EMPTY, SETVAL, QUEUE_CAPACITY - 1);
+    semctl(q->semID, EMPTY, SETVAL, QUEUE_CAPACITY);
 
 }
 
@@ -79,10 +79,7 @@ int isBufferEmpty(PriorityQueue *q){
     return size == 0;
 }
 
-int initQueue(PriorityQueue *q, char *keyStr){
-    key_t key;
-
-    key = ftok(keyStr, 1);
+int initQueue(PriorityQueue *q, key_t key){
     allocateMemory(q, key);
     initSemaphores(q, key);
     assignMem(q);
@@ -90,6 +87,7 @@ int initQueue(PriorityQueue *q, char *keyStr){
     q->sharedMem->head = 0;
     q->sharedMem->tail = 0;
     q->sharedMem->size = 0;
+    q->sharedMem->priorQuantity = 0;
 }
 
 int deleteQueue(PriorityQueue *q){
@@ -115,6 +113,8 @@ int enqueue(PriorityQueue *q, QueueElement element){
     q->sharedMem->buffer[q->sharedMem->tail] = element;
     q->sharedMem->tail = (q->sharedMem->tail + 1) % QUEUE_CAPACITY;
     q->sharedMem->size++;
+    if(element.priority == HIGH)
+        q->sharedMem->priorQuantity++;
 
     //end of critical section
     
@@ -141,6 +141,8 @@ int dequeue(PriorityQueue *q, QueueElement *element){
     *element = q->sharedMem->buffer[q->sharedMem->head];
     q->sharedMem->head = (q->sharedMem->head + 1) % QUEUE_CAPACITY;
     q->sharedMem->size--;
+    if(element->priority == HIGH)
+        q->sharedMem->priorQuantity--;
 
     //end of critical
     semUp(q, MUTEX);
@@ -154,4 +156,25 @@ QueueElement createElement(int value, Prior priority){
     element.value = value;
     element.priority = priority;
     return element;
+}
+
+void displayQueue(PriorityQueue *queue){
+    int i, id, pri;
+    semDown(queue, MUTEX);
+
+    printf("HEAD-- ");
+    id = queue->sharedMem->head;
+    for(i = 0; i < queue->sharedMem->size; i++){
+        if(queue->sharedMem->buffer[id].priority == HIGH)
+            pri = 'H';
+        else
+            pri = 'L';
+
+        printf("%d(%c) ", queue->sharedMem->buffer[id].value, pri);
+        id = (id + 1) % QUEUE_CAPACITY;
+    }
+    printf("--TAIL");
+    printf("\n");
+
+    semUp(queue, MUTEX);
 }

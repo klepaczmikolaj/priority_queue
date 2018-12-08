@@ -3,7 +3,7 @@
 
 #include <sys/shm.h>
 
-#define QUEUE_CAPACITY 11
+#define QUEUE_CAPACITY 10
 #define SEMAPHORE_NUMBER 3
 
 typedef enum {NORMAL, PRIORITY} QueueType;
@@ -19,6 +19,7 @@ typedef struct shm{
     int head;
     int tail;
     int size;
+    int priorQuantity;
     QueueElement buffer[QUEUE_CAPACITY];
 } SharedMemory;
 
@@ -43,10 +44,11 @@ void detachMem(PriorityQueue *q);
 int isBufferFull(PriorityQueue *q);
 int isBufferEmpty(PriorityQueue *q);
 
-int initQueue(PriorityQueue *q, char *keyStr);
+int initQueue(PriorityQueue *q, key_t key);
 int deleteQueue(PriorityQueue *q);
 int enqueue(PriorityQueue *q, QueueElement element);
 int dequeue(PriorityQueue *q, QueueElement *element);
 QueueElement createElement(int value, Prior priority);
+void displayQueue(PriorityQueue *queue);
 
 #endif

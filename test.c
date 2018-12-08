@@ -1,31 +1,38 @@
 #include <stdio.h>
 #include "priority_queue.h"
 
+
 int main(int argc, char const *argv[]){
     PriorityQueue queue;
     char *path = "priority_queue_str";
-    initQueue(&queue, path);
+    key_t key;
+    key = ftok(path, 1);
+    initQueue(&queue, key);
 
     printf("head: %d tail: %d\n", queue.sharedMem->head, queue.sharedMem->tail);
 
 
     printf("no. elements: %d\n", queue.sharedMem->size);
     int i;
-   /* for(i = 0; i < 3; i++){
+    for(i = 0; i < 12; i++){
         QueueElement elem;
-        elem = createElement(2, HIGH);
+        elem = createElement(i, HIGH);
         enqueue(&queue, elem);
-        printf("no. elements: %d\n", queue.sharedMem->size);
+        displayQueue(&queue);
+        printf("head: %d, tail: %d\n\n", queue.sharedMem->head, queue.sharedMem->tail);
+        printf("prior: %d\n\n", queue.sharedMem->priorQuantity);
     }
-*/
 
-    for(i = 0; i < 6; i++){
+
+    for(i = 0; i < 12; i++){
         QueueElement elem;
         dequeue(&queue, &elem);
-        printf("elem val: %d\n", elem.value);
-        printf("no. elements: %d\n", queue.sharedMem->size);
+        displayQueue(&queue);
+        printf("head: %d, tail: %d\n\n", queue.sharedMem->head, queue.sharedMem->tail);
+        printf("prior: %d\n\n", queue.sharedMem->priorQuantity);
     }
-    
+
+
     deleteQueue(&queue);
 
     return 0;

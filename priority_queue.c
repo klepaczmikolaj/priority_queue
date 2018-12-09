@@ -92,9 +92,9 @@ int initQueue(PriorityQueue *q, key_t key, QueueType type){
 }
 
 int deleteQueue(PriorityQueue *q){
+    detachMem(q);
     semctl(q->semID, 0, IPC_RMID);
     shmctl(q->shmID, IPC_RMID, NULL);
-    detachMem(q);
 }
 
 

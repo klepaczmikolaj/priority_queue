@@ -1,5 +1,7 @@
 {
     "files.associations": {
-        "sem.h": "c"
+        "sem.h": "c",
+        "priority_queue.h": "c",
+        "stdlib.h": "c"
     }
 }

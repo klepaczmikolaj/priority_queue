@@ -6,8 +6,6 @@
   The queue itself is implemented using semaphores and linux shared memory. 
   Libraries used: <sys/shm.h> <sys/sem.h>
 
-
-
 */
 
 
@@ -73,7 +71,7 @@ int isBufferEmpty(PriorityQueue *q);
 int enqueue(PriorityQueue *q, QueueElement element);
 int dequeue(PriorityQueue *q, QueueElement *element);
 
-// Additional functions
+/* Additional functions */
 void displayQueue(PriorityQueue *queue);
 QueueElement createElement(int value, Prior priority);
 
